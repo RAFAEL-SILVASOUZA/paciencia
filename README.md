@@ -4,7 +4,7 @@ Jogo da paciência (Klondike) em **PWA mobile-first**, em português (pt-BR).
 
 ## Como jogar
 
-- **Ajuda 💡**: mostra a jogada mais inteligente (uma dentre: base, revelação de carta, coluna vazia). **3 usos por partida**.
+- **Ajuda **: mostra a jogada mais inteligente (uma dentre: base, revelação de carta, coluna vazia). **3 usos por partida**.
 - **Voltar ↩**: desfaz a última jogada. **3 usos por partida**.
 - **Nova partida ↻**: confirma (dupla-toque) e recomeça.
 - **Comprar carta**: toque no baralho.
