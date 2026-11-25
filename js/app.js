@@ -12,11 +12,11 @@ import {
   SUIT_GLYPH,
   SUIT_COLOR,
   SUIT_NAME,
-} from './engine.js?v=21';
-import { sfx, isSoundEnabled, setSoundEnabled } from './sfx.js?v=21';
-import { recordGame, loadStats, formatTimeMs } from './stats.js?v=21';
-import { startCascade } from './winfx.js?v=21';
-import { icon } from './icons.js?v=21';
+} from './engine.js?v=22';
+import { sfx, isSoundEnabled, setSoundEnabled } from './sfx.js?v=22';
+import { recordGame, loadStats, formatTimeMs } from './stats.js?v=22';
+import { startCascade } from './winfx.js?v=22';
+import { icon } from './icons.js?v=22';
 
 const MAX_EXPORTS = 10;
 let busy = false; // bloqueia entradas durante a cascata automática

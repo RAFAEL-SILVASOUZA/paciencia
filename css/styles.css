@@ -13,18 +13,25 @@
   --black: #1f2933;
   --green-accent: #2fbf8f;
 
-  /* Cartas dimensionadas para paisagem */
-  --cw: clamp(30px, min(11vw, 13vh), 66px);
-  --ch: calc(var(--cw) * 1.44);
+  /* Cartas dimensionadas para paisagem:
+     a carta ocupa a largura real das 7 colunas, limitada pela altura da tela */
   --gap: clamp(4px, 1vw, 9px);
+  --sidebar-w: clamp(140px, 18vw, 240px);
+  --cw: clamp(
+    34px,
+    min(
+      calc((100vw - var(--sidebar-w) - 40px - 6 * var(--gap)) / 7),
+      20vh
+    ),
+    92px
+  );
+  --ch: calc(var(--cw) * 1.44);
   --step: calc(var(--ch) * 0.36);
   --step-fd: calc(var(--ch) * 0.20);
   --radius: calc(var(--cw) * 0.14);
 
   --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-card: Georgia, 'Palatino Linotype', 'Segoe UI', serif;
-
-  --sidebar-w: clamp(140px, 20vw, 240px);
 }
 
 * { box-sizing: border-box; }
@@ -749,21 +756,34 @@ body {
 /* ---------- Telas grandes ---------- */
 @media (min-width: 1024px) {
   :root {
-    --cw: 64px;
-    --sidebar-w: 245px;
+    --sidebar-w: 216px;
+    --cw: clamp(
+      64px,
+      min(
+        calc((100vw - var(--sidebar-w) - 44px - 6 * var(--gap)) / 7),
+        19vh
+      ),
+      120px
+    );
   }
 }
 
 @media (min-width: 1500px) {
   :root {
-    --cw: 74px;
-    --sidebar-w: 270px;
+    --sidebar-w: 236px;
+    --cw: clamp(
+      84px,
+      min(
+        calc((100vw - var(--sidebar-w) - 44px - 6 * var(--gap)) / 7),
+        20vh
+      ),
+      140px
+    );
   }
 }
 
 @media (orientation: landscape) and (max-height: 460px) {
   :root {
-    --cw: clamp(28px, 12vh, 54px);
     --step: calc(var(--ch) * 0.30);
     --step-fd: calc(var(--ch) * 0.16);
   }
