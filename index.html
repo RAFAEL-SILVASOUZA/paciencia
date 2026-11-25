@@ -24,18 +24,20 @@
       </div>
       <div class="side-top">
         <div class="chip" id="timer" title="Tempo decorrido">0:00</div>
+        <div class="chip chip-wins" id="winChip" title="Vitórias salvas neste aparelho"><span class="chip-ic" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"/><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"/><path d="M18 9h1.5a1 1 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6 9H4.5a1 1 0 0 1 0-5H6"/></svg></span><span id="winCount">0</span></div>
       </div>
 
       <div class="side-toolbar" role="toolbar" aria-label="Ações do jogo">
         <button id="btnHelp" class="btn help" type="button" aria-label="Ajuda inteligente">
-          <span aria-hidden="true">💡</span> Ajuda <span class="count" id="helpCount">3</span>
+          <span class="ic" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></span> Ajuda <span class="count" id="helpCount">3</span>
         </button>
         <button id="btnUndo" class="btn undo" type="button" aria-label="Voltar jogada">
-          <span aria-hidden="true">↩</span> Voltar <span class="count" id="undoCount">3</span>
+          <span class="ic" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></svg></span> Voltar <span class="count" id="undoCount">3</span>
         </button>
         <button id="btnNew" class="btn new" type="button" aria-label="Nova partida">
-          <span aria-hidden="true">↻</span> Nova partida
+          <span class="ic" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></span> Nova partida
         </button>
+        <button id="btnSound" class="btn sound" type="button" aria-label="Ligar ou desligar o som"><span class="ic" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></svg></span> Som</button>
       </div>
 
       <div class="footnote">Ajuda e Voltar: 3 usos por partida<br>fim quando não houver jogadas</div>
@@ -57,7 +59,7 @@
 
   <div id="rotateHint" class="rotate-hint" role="dialog" aria-modal="true" aria-labelledby="rotateTitle">
     <div class="rotate-card">
-      <div class="rotate-glyph" aria-hidden="true">🔄</div>
+      <div class="rotate-glyph" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg></div>
       <h2 id="rotateTitle">Vire o aparelho</h2>
       <p>Este jogo é melhor jogado em paisagem.</p>
       <div class="rotate-actions">
@@ -68,16 +70,17 @@
 
   <div id="overlay" class="overlay" hidden>
     <div class="panel" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
-      <div class="overlay-icon" id="overlayIcon" aria-hidden="true">🏁</div>
+      <div class="overlay-icon" id="overlayIcon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/></svg></div>
       <h2 id="overlayTitle">Fim de jogo</h2>
       <p id="overlayMsg">Não há mais jogadas disponíveis.</p>
       <div class="stats" id="overlayStats"></div>
-      <button id="btnOverlayNew" class="btn primary big" type="button">☀ Nova partida</button>
+      <div class="record-line" id="overlayRecord"><span class="rec-ic" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"/><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"/><path d="M18 9h1.5a1 1 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6 9H4.5a1 1 0 0 1 0-5H6"/></svg></span><span id="overlayRecordText"></span></div>
+      <button id="btnOverlayNew" class="btn primary big" type="button"><span class="ic" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></span> Nova partida</button>
       <button id="btnOverlayUndo" class="btn ghost" type="button">↩ Voltar jogada</button>
       <button id="btnOverlayClose" class="btn ghost light" type="button">Ver tabuleiro</button>
     </div>
   </div>
 
-  <script src="js/app.js?v=19" type="module"></script>
+  <script src="js/app.js?v=20" type="module"></script>
 </body>
 </html>

@@ -138,6 +138,57 @@ body {
 .btn.undo { background: linear-gradient(180deg, #cfd8c6, #a9b7a3); color: #141b14; }
 .btn.new { background: linear-gradient(180deg, #2c5441, #1d3f2f); color: var(--text); box-shadow: 0 3px 10px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); }
 
+.btn.sound {
+  background: linear-gradient(180deg, #3d6b52, #294a37);
+  color: var(--text);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.btn.sound.muted { filter: grayscale(0.6) brightness(0.75); }
+
+.chip-wins {
+  margin-left: 6px;
+  background: rgba(236, 207, 125, 0.12);
+  border-color: rgba(236, 207, 125, 0.45);
+}
+
+.record-line {
+  margin: -4px 0 10px;
+  font-size: 0.74rem;
+  color: var(--muted);
+  line-height: 1.4;
+  min-height: 1em;
+}
+
+.cascade-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  cursor: pointer;
+}
+
+/* ---------- Ícones (Lucide inline) ---------- */
+.ic, .chip-ic, .rec-ic {
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn .ic svg { width: 1.15em; height: 1.15em; }
+.chip-ic svg { width: 1em; height: 1em; margin-right: 4px; }
+.rec-ic svg { width: 1em; height: 1em; margin-right: 5px; }
+
+.overlay-icon svg {
+  width: 2.4rem;
+  height: 2.4rem;
+  color: var(--gold);
+}
+
+.rotate-glyph svg {
+  width: 3rem;
+  height: 3rem;
+  color: var(--gold);
+}
+
 .btn.armed {
   background: linear-gradient(180deg, #f2b3b3, #d36);
   color: #2a0d0d;

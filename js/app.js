@@ -12,9 +12,21 @@ import {
   SUIT_GLYPH,
   SUIT_COLOR,
   SUIT_NAME,
-} from './engine.js?v=19';
+} from './engine.js?v=20';
+import { sfx, isSoundEnabled, setSoundEnabled } from './sfx.js?v=20';
+import { recordGame, loadStats, formatTimeMs } from './stats.js?v=20';
+import { startCascade } from './winfx.js?v=20';
+import { icon } from './icons.js?v=20';
 
 const MAX_EXPORTS = 3;
+
+function buzz(pattern) {
+  try {
+    navigator.vibrate?.(pattern);
+  } catch {
+    // dispositivo sem vibração
+  }
+}
 
 // ---------- Estado da aplicação ----------
 let state = newGame();
@@ -47,6 +59,10 @@ const btnOverlayClose = $('#btnOverlayClose');
 const btnHelp = $('#btnHelp');
 const btnUndo = $('#btnUndo');
 const btnNew = $('#btnNew');
+const btnSound = $('#btnSound');
+const winChip = $('#winChip');
+const winCountEl = $('#winCount');
+const overlayRecordText = $('#overlayRecordText');
 const helpCountEl = $('#helpCount');
 const undoCountEl = $('#undoCount');
 const timerEl = $('#timer');
@@ -137,6 +153,21 @@ function renderBadges() {
   undoCountEl.textContent = `${Math.max(0, MAX_EXPORTS - usedUndo)}`;
   btnHelp.classList.toggle('exhausted', usedHelp >= MAX_EXPORTS);
   btnUndo.classList.toggle('exhausted', usedUndo >= MAX_EXPORTS);
+}
+
+function renderSound() {
+  const on = isSoundEnabled();
+  btnSound.classList.toggle('muted', !on);
+  btnSound.innerHTML = `<span class="ic" aria-hidden="true">${icon(on ? 'volume2' : 'volumeX')}</span> ${on ? 'Som' : 'Mudo'}`;
+  btnSound.setAttribute('aria-label', on ? 'Desligar o som' : 'Ligar o som');
+}
+
+function updateWinChip(stats) {
+  const s = stats || loadStats();
+  winCountEl.textContent = String(s.won);
+  winChip.title = s.played === 0
+    ? 'Nenhuma partida registrada ainda'
+    : `${s.won} vitória${s.won === 1 ? '' : 's'} em ${s.played} partida${s.played === 1 ? '' : 's'}`;
 }
 
 function renderTimer() {
@@ -263,6 +294,7 @@ function attachTableauEvents() {
 
 function render() {
   renderBadges();
+  renderSound();
   renderTimer();
   renderStock();
   renderWaste();
@@ -363,6 +395,23 @@ function flyGhost(sourceRect, targetRect, clone, hideEl) {
   setTimeout(finish, 460);
 }
 
+function playSfxForMove(move) {
+  switch (move.type) {
+    case 'draw':
+      sfx.draw();
+      break;
+    case 'redeal':
+      sfx.shuffle();
+      break;
+    case 'foundation':
+    case 'tableau':
+      sfx.place();
+      break;
+    default:
+      break;
+  }
+}
+
 function doMove(move) {
   if (finished) return;
   const sourceShot = captureSourceShot(move);
@@ -372,6 +421,8 @@ function doMove(move) {
   clearToast();
   render();
   playMoveAnimation(move, sourceShot);
+  playSfxForMove(move);
+  buzz(12);
   const s = gameStatus(state);
   if (s.over) endGame(s);
 }
@@ -411,6 +462,8 @@ function doUndo() {
   overlayEl.classList.remove('show');
   overlayEl.setAttribute('hidden', '');
   render();
+  sfx.undo();
+  buzz(8);
   toast('Jogada desfeita');
 }
 
@@ -436,12 +489,48 @@ function endGame(s) {
   won = s.won;
   elapsedMs = Date.now() - startedAt;
   renderStatusLine();
-  setTimeout(showOverlay, 450);
+  const stats = recordGame({ won, moves: state.moves, ms: elapsedMs });
+  updateWinChip(stats);
+  if (won) {
+    sfx.win();
+    buzz([10, 70, 10, 70, 26]);
+    launchWinCascade(stats);
+  } else {
+    sfx.over();
+    buzz([14, 90, 14]);
+    setTimeout(showOverlay, 450);
+  }
+}
+
+function launchWinCascade(stats) {
+  // ordem clássica: topo de cada base, uma carta por vez
+  const piles = state.foundations.map((p) => p.slice());
+  const cards = [];
+  for (let r = 0; r < 13; r++) {
+    for (let sIdx = 0; sIdx < 4; sIdx++) {
+      const c = piles[sIdx].pop();
+      if (c) {
+        cards.push({
+          label: cardName(c),
+          glyph: SUIT_GLYPH[c.suit],
+          red: SUIT_COLOR[c.suit] === 'red',
+        });
+      }
+    }
+  }
+  const origins = [0, 1, 2, 3].map((sIdx) =>
+    foundationsEl.querySelector(`[data-suit="${sIdx}"]`).getBoundingClientRect()
+  );
+  startCascade({
+    cards,
+    getOriginRect: (i) => origins[i % 4],
+    onDone: showOverlay,
+  });
 }
 
 function showOverlay() {
   const s = gameStatus(state);
-  overlayIcon.textContent = won ? '🎉' : '🏁';
+  overlayIcon.innerHTML = icon(won ? 'partyPopper' : 'flag');
   overlayTitle.textContent = won ? 'Vitória!' : 'Fim de jogo';
   overlayMsg.textContent = won
     ? 'Todas as bases foram completadas. Excelente trabalho!'
@@ -454,6 +543,15 @@ function showOverlay() {
   const canUndo = usedUndo < MAX_EXPORTS && undoStack.length > 0;
   btnOverlayUndo.style.display = canUndo ? '' : 'none';
   btnOverlayUndo.textContent = `↩ Voltar jogada (${MAX_EXPORTS - usedUndo})`;
+  const stats = loadStats();
+  if (stats.played > 0) {
+    const recorde = stats.bestWinMs !== null
+      ? `recorde ${formatTimeMs(stats.bestWinMs)} · ${stats.bestWinMoves} jogadas`
+      : 'sem vitória ainda';
+    overlayRecordText.textContent = `${stats.won} vitória${stats.won === 1 ? '' : 's'} em ${stats.played} · sequência ${stats.streak} · ${recorde}`;
+  } else {
+    overlayRecordText.textContent = '';
+  }
   overlayEl.classList.add('show');
   overlayEl.removeAttribute('hidden');
 }
@@ -482,7 +580,7 @@ function doNewGame() {
 function disarmNewConfirm() {
   clearTimeout(confirmNewTimer);
   btnNew.classList.remove('armed');
-  btnNew.innerHTML = '<span aria-hidden="true">↻</span> Nova partida';
+  btnNew.innerHTML = `<span class="ic" aria-hidden="true">${icon('rotateCw')}</span> Nova partida`;
 }
 
 // ---------- Interações ----------
@@ -616,7 +714,7 @@ function initEvents() {
       return;
     }
     btnNew.classList.add('armed');
-    btnNew.innerHTML = '<span aria-hidden="true">⚠️</span> Confirmar?';
+    btnNew.innerHTML = `<span class="ic" aria-hidden="true">${icon('triangleAlert')}</span> Confirmar?`;
     confirmNewTimer = setTimeout(disarmNewConfirm, 2600);
   });
 
@@ -626,6 +724,14 @@ function initEvents() {
     doUndo();
   });
 
+  btnSound.addEventListener('click', () => {
+    const next = !isSoundEnabled();
+    setSoundEnabled(next);
+    renderSound();
+    if (next) sfx.place();
+    buzz(8);
+  });
+
   initRotateDismiss();
 }
 
@@ -633,6 +739,7 @@ function initEvents() {
 function init() {
   initEvents();
   render();
+  updateWinChip();
   requestLandscapeOrientation();
 
   setInterval(() => {
