@@ -4,7 +4,6 @@ import {
   applyMove,
   gameStatus,
   bestMove,
-  movesFromSelection,
   describeMove,
   deepClone,
   rankLabel,
@@ -13,13 +12,12 @@ import {
   SUIT_GLYPH,
   SUIT_COLOR,
   SUIT_NAME,
-} from './engine.js?v=17';
+} from './engine.js?v=19';
 
 const MAX_EXPORTS = 3;
 
 // ---------- Estado da aplicação ----------
 let state = newGame();
-let selection = null; // {type:'waste'} | {type:'tableau', col, idx}
 let undoStack = [];
 let usedHelp = 0;
 let usedUndo = 0;
@@ -93,10 +91,6 @@ function clearHint() {
 
 function showHint(move) {
   clearHint();
-  const sel = selection;
-  // Limpa seleção para não conflitar com o destaque de dica
-  selection = null;
-
   let sources = [];
   let targets = [];
 
@@ -257,13 +251,6 @@ function renderTableau() {
       const card = col[i];
       const cardView = { ...card, _index: i };
       const el = buildCardEl(cardView, 'tableau');
-      if (selection && selection.type === 'tableau' && selection.col === c && selection.idx === i) {
-        el.classList.add('selected');
-      }
-      if (selection && selection.type === 'tableau' && selection.col === c && selection.idx <= i) {
-        // cards of the selected stack stay highlighted
-        el.classList.add('selected-part');
-      }
       colEl.appendChild(el);
     }
     tableauEl.appendChild(colEl);
@@ -352,7 +339,7 @@ function flyGhost(sourceRect, targetRect, clone, hideEl) {
   ghost.style.width = `${targetRect.width}px`;
   ghost.style.height = `${targetRect.height}px`;
   const cloneToUse = clone.cloneNode(true);
-  cloneToUse.classList.remove('selected', 'selected-part', 'hint-src', 'hint-dst', 'fly-hidden');
+  cloneToUse.classList.remove('hint-src', 'hint-dst', 'fly-hidden');
   ghost.appendChild(cloneToUse);
   document.body.appendChild(ghost);
   if (hideEl && hideEl.isConnected) {
@@ -381,7 +368,6 @@ function doMove(move) {
   const sourceShot = captureSourceShot(move);
   undoStack.push(deepClone(state));
   applyMove(state, move);
-  selection = null;
   clearHint();
   clearToast();
   render();
@@ -420,7 +406,6 @@ function doUndo() {
   const snap = undoStack.pop();
   state = snap;
   usedUndo++;
-  selection = null;
   finished = false;
   won = false;
   overlayEl.classList.remove('show');
@@ -436,7 +421,7 @@ function doHelp() {
     toast(`Sem usos restantes de Ajuda (${MAX_EXPORTS} por partida)`);
     return;
   }
-  const move = bestMove(state, selection);
+  const move = bestMove(state, null);
   if (!move) {
     toast('Nenhuma jogada disponível');
     return;
@@ -480,7 +465,6 @@ function hideOverlay() {
 
 function doNewGame() {
   state = newGame();
-  selection = null;
   undoStack = [];
   usedHelp = 0;
   usedUndo = 0;
@@ -502,61 +486,32 @@ function disarmNewConfirm() {
 }
 
 // ---------- Interações ----------
-function isCardSelectedable(card, col, idx) {
-  return card.faceUp;
+function moveSmartForSelection(selection) {
+  // Executa a jogada mais inteligente para a carta/pilha selecionada
+  const move = bestMove(state, selection);
+  if (!move) {
+    toast('Sem jogadas para essa carta');
+    return false;
+  }
+  doMove(move);
+  return true;
 }
 
 function onCardClick(col, idx) {
-  if (finished) return;
+  if (finished) {
+    toast('Partida encerrada — clique em Nova partida para recomeçar');
+    return;
+  }
   const colState = state.tableau[col];
   const card = colState[idx];
   if (!card || !card.faceUp) return;
-
-  // Selecionado nesta mesma coluna: muda o início da sequência
-  if (selection && selection.type === 'tableau' && selection.col === col) {
-    if (selection.idx === idx) {
-      selection = null;
-      render();
-      return;
-    }
-    selection = { type: 'tableau', col, idx };
-    render();
-    return;
-  }
-
-  // Seleção existente: tenta mover para a coluna alvo
-  if (selection) {
-    const targetCol = col;
-    const moves = movesFromSelection(state, selection).filter(
-      (m) => m.type === 'tableau' && m.to === targetCol
-    );
-    if (moves.length > 0) {
-      doMove(moves[0]);
-      return;
-    }
-  }
-
-  selection = { type: 'tableau', col, idx };
-  render();
+  // Click inteligente: move a melhor jogada da carta automaticamente
+  moveSmartForSelection({ type: 'tableau', col, idx });
 }
 
 function onFoundationClick(suit) {
   if (finished) {
     toast('Partida encerrada — clique em Nova partida para recomeçar');
-    return;
-  }
-  if (selection) {
-    const moves = movesFromSelection(state, selection).filter(
-      (m) => m.type === 'foundation' && m.to === suit
-    );
-    if (moves.length > 0) {
-      doMove(moves[0]);
-      return;
-    }
-    // base não aceita a seleção atual: limpa seleção e avisa
-    selection = null;
-    render();
-    toast(`A base de ${SUIT_NAME[suit]} não aceita essa carta`);
     return;
   }
   const moves = legalMoves(state)
@@ -575,21 +530,7 @@ function onTableauEmptyClick(col) {
     toast('Partida encerrada — clique em Nova partida para recomeçar');
     return;
   }
-  if (selection) {
-    const moves = movesFromSelection(state, selection).filter(
-      (m) => m.type === 'tableau' && m.to === col
-    );
-    if (moves.length > 0) {
-      doMove(moves[0]);
-      return;
-    }
-    // coluna vazia não aceita a seleção atual: limpa seleção e avisa
-    selection = null;
-    render();
-    toast('Coluna vazia só aceita um Rei sozinho');
-    return;
-  }
-  // sem seleção: tenta auto-mover o Rei (do descarte ou da mesa)
+  // auto-move: tenta auto-mover o Rei (do descarte ou da mesa)
   const moves = legalMoves(state)
     .filter((m) => m.type === 'tableau' && m.to === col)
     // prefere o Rei do descarte (mais recente)
@@ -602,28 +543,13 @@ function onTableauEmptyClick(col) {
 }
 
 function onWasteClick() {
-  if (finished) return;
-  if (selection && selection.type === 'waste') {
-    selection = null;
-    render();
-    return;
-  }
-  if (selection && selection.type === 'tableau') {
-    // muda a seleção para o descarte
-    selection = { type: 'waste' };
-    render();
+  if (finished) {
+    toast('Partida encerrada — clique em Nova partida para recomeçar');
     return;
   }
   if (state.waste.length === 0) return;
-  selection = { type: 'waste' };
-  render();
-}
-
-function onWasteCardKeydown(e, col, idx) {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    onCardClick(col, idx);
-  }
+  // Click inteligente: move a melhor jogada do descarte automaticamente
+  moveSmartForSelection({ type: 'waste' });
 }
 
 // ---------- Orientação paisagem ----------
@@ -679,15 +605,6 @@ function initEvents() {
       const col = +card.closest('.col').dataset.col;
       const idx = +card.dataset.cardIdx;
       onCardClick(col, idx);
-    }
-  });
-
-  document.addEventListener('click', (e) => {
-    // toque fora de cartões/pilhas limpa a seleção
-    if (e.target.closest('.card') || e.target.closest('.foundation') || e.target.closest('.pile') || e.target.closest('.stock-card') || e.target.closest('.col') || e.target.closest('button')) return;
-    if (selection) {
-      selection = null;
-      render();
     }
   });
 

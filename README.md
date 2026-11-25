@@ -9,7 +9,7 @@ Jogo da paciência (Klondike) em **PWA mobile-first**, em português (pt-BR).
 - **Nova partida ↻**: confirma (dupla-toque) e recomeça.
 - **Comprar carta**: toque no baralho.
 - **Reembaralhar**: quando o baralho zerar, toque nele de novo — ele devolve as cartas do descarte ao baralho (invertidas, viradas para baixo) para você recompartilhar.
-- **Mover carta**: toque numa carta (ou sequência) para selecionar, depois toque no destino.
+- **Mover carta**: toque numa carta do descarte ou da mesa — ela se move sozinha para a melhor jogada legal (click inteligente). Toque numa base ou numa coluna vazia para auto-mover a melhor jogada para lá. Sem jogada possível, um aviso aparece.
   - Colunas vazias aceitam apenas **Rei sozinho**.
   - Bases aceitam sequência crescente do mesmo naipe ( Ás → Rei).
 - **Fim de jogo**: quando não houver mais jogadas (ou quando as 4 bases estiverem completas — vitória).

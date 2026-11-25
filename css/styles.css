@@ -270,7 +270,7 @@ body {
 }
 
 .foundation-glyph {
-  font-size: calc(var(--cw) * 0.42);
+  font-size: calc(var(--cw) * 0.55);
   color: rgba(236, 207, 125, 0.4);
   filter: grayscale(0.4);
 }
@@ -312,7 +312,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(var(--cw) * 0.4);
+  font-size: calc(var(--cw) * 0.5);
   color: rgba(236, 207, 125, 0.45);
 }
 
@@ -419,7 +419,7 @@ body {
 
 .card .corner {
   position: absolute;
-  font-size: calc(var(--cw) * 0.19);
+  font-size: calc(var(--cw) * 0.24);
   line-height: 1.1;
   font-weight: 700;
   display: flex;
@@ -428,7 +428,7 @@ body {
   white-space: nowrap;
 }
 
-.card .corner b { font-size: calc(var(--cw) * 0.21); }
+.card .corner b { font-size: calc(var(--cw) * 0.28); }
 .card .corner.tl { top: 4px; left: 5px; }
 .card .corner.br { bottom: 4px; right: 5px; transform: rotate(180deg); }
 
@@ -438,7 +438,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(var(--cw) * 0.44);
+  font-size: calc(var(--cw) * 0.52);
   text-shadow: 0 1px 1px rgba(0,0,0,0.15);
 }
 
@@ -465,17 +465,6 @@ body {
 .col .card:nth-child(18) { z-index: 18; }
 .col .card:nth-child(19) { z-index: 19; }
 .col .card:nth-child(20) { z-index: 20; }
-
-.card.selected,
-.card.selected-part {
-  z-index: 40;
-  box-shadow: 0 0 0 3px var(--gold), 0 10px 22px rgba(0, 0, 0, 0.55);
-  transform: translateY(-6px);
-}
-
-.card.selected {
-  box-shadow: 0 0 0 3px var(--gold), 0 14px 24px rgba(0, 0, 0, 0.6);
-}
 
 /* ---------- Dicas ---------- */
 .card.hint-src, .pile.hint-src {
