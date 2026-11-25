@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0c241a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Paciência">
+  <meta name="description" content="Jogo da paciência de cartas — PWA landscape. Ajuda inteligente e voltar jogadas, 3 usos por partida.">
+  <title>Paciência de Cartas</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Painéis laterais">
+      <div class="brand">
+        <span class="title-glyph" aria-hidden="true">♠</span>
+        <span>Paciência</span>
+      </div>
+      <div class="side-top">
+        <div class="chip" id="timer" title="Tempo decorrido">0:00</div>
+      </div>
+
+      <div class="side-toolbar" role="toolbar" aria-label="Ações do jogo">
+        <button id="btnHelp" class="btn help" type="button" aria-label="Ajuda inteligente">
+          <span aria-hidden="true">💡</span> Ajuda <span class="count" id="helpCount">3</span>
+        </button>
+        <button id="btnUndo" class="btn undo" type="button" aria-label="Voltar jogada">
+          <span aria-hidden="true">↩</span> Voltar <span class="count" id="undoCount">3</span>
+        </button>
+        <button id="btnNew" class="btn new" type="button" aria-label="Nova partida">
+          <span aria-hidden="true">↻</span> Nova partida
+        </button>
+      </div>
+
+      <div class="footnote">Ajuda e Voltar: 3 usos por partida<br>fim quando não houver jogadas</div>
+    </aside>
+
+    <main class="board" id="board" aria-label="Tabuleiro">
+      <div id="statusLine" class="status-line" role="status"></div>
+      <div id="hintBar" class="hint-bar" role="status" aria-live="polite"></div>
+      <section class="top-row" aria-label="Baralho, descarte e bases">
+        <button id="stockBtn" class="pile stock" type="button" aria-label="Comprar uma carta do baralho"></button>
+        <button id="wastePile" class="pile waste" type="button" aria-label="Monte de descarte"></button>
+        <div id="foundations" class="foundations" role="group" aria-label="Bases"></div>
+      </section>
+      <section id="tableau" class="tableau" aria-label="Colunas de mesa"></section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <div id="rotateHint" class="rotate-hint" role="dialog" aria-modal="true" aria-labelledby="rotateTitle">
+    <div class="rotate-card">
+      <div class="rotate-glyph" aria-hidden="true">🔄</div>
+      <h2 id="rotateTitle">Vire o aparelho</h2>
+      <p>Este jogo é melhor jogado em paisagem.</p>
+      <div class="rotate-actions">
+        <button id="btnRotateDismiss" class="btn ghost" type="button">Jogar mesmo assim</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="overlay" class="overlay" hidden>
+    <div class="panel" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
+      <div class="overlay-icon" id="overlayIcon" aria-hidden="true">🏁</div>
+      <h2 id="overlayTitle">Fim de jogo</h2>
+      <p id="overlayMsg">Não há mais jogadas disponíveis.</p>
+      <div class="stats" id="overlayStats"></div>
+      <button id="btnOverlayNew" class="btn primary big" type="button">☀ Nova partida</button>
+      <button id="btnOverlayUndo" class="btn ghost" type="button">↩ Voltar jogada</button>
+      <button id="btnOverlayClose" class="btn ghost light" type="button">Ver tabuleiro</button>
+    </div>
+  </div>
+
+  <script src="js/app.js?v=17" type="module"></script>
+</body>
+</html>

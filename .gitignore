@@ -1,0 +1,9 @@
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs e temp
+*.log
+*.tmp
+node_modules/
