@@ -4,14 +4,16 @@ Jogo da paciência (Klondike) em **PWA mobile-first**, em português (pt-BR).
 
 ## Como jogar
 
-- **Ajuda**: mostra a jogada mais inteligente (uma dentre: base, revelação de carta, coluna vazia). **3 usos por partida**.
-- **Voltar**: desfaz a última jogada. **3 usos por partida**.
+- **Ajuda**: mostra a jogada mais inteligente (uma dentre: base, revelação de carta, coluna vazia, puxar da base). **10 usos por partida**.
+- **Voltar**: desfaz a última jogada (a cascata automática inteira conta como uma só). **10 usos por partida**.
 - **Nova partida**: confirma (dupla-toque) e recomeça.
 - **Comprar carta**: toque no baralho.
 - **Reembaralhar**: quando o baralho zerar, toque nele de novo — ele devolve as cartas do descarte ao baralho (invertidas, viradas para baixo) para você recompartilhar.
 - **Mover carta**: toque numa carta do descarte ou da mesa — ela se move sozinha para a melhor jogada legal (click inteligente). Toque numa base ou numa coluna vazia para auto-mover a melhor jogada para lá. Sem jogada possível, um aviso aparece.
   - Colunas vazias aceitam apenas **Rei sozinho**.
   - Bases aceitam sequência crescente do mesmo naipe ( Ás → Rei).
+- **Auto-play**: quando uma carta vai para a base (manual ou automaticamente), as demais cartas da mesa e do descarte que também puderem ir para as bases vão sozinhas, em cascata — desfazer reverte a jogada + a cascata inteira.
+- **Puxar de volta**: toque numa base preenchida quando nada pode ir para ela — a carta do topo volta para a melhor coluna da mesa (coluna vazia tem prioridade). Puxar não dispara auto-play e não conta como jogada para o fim de jogo.
 - **Som 🔊**: efeitos sonoros discretos gerados via WebAudio (sem arquivos externos). O botão "Som" alterna entre ligado e mudo; a preferência fica salva no aparelho.
 - **Vibração**: em aparelhos compatíveis, um toque háptico discreto a cada jogada.
 - **Vitória**: fanfarra + cascata de cartas quicando na tela (toque na tela para pular).
@@ -34,7 +36,7 @@ python3 -m http.server 8080
 ## Testes
 
 ```bash
-node --test tests/engine.test.js
+node --test tests/
 ```
 
 ## Deploy

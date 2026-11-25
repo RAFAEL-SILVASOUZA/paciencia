@@ -137,6 +137,17 @@ export function legalMoves(state) {
     }
   }
 
+  // Puxar de volta a carta do topo de uma base para a mesa
+  for (let f = 0; f < 4; f++) {
+    const top = topCard(state.foundations[f]);
+    if (!top) continue;
+    for (let d = 0; d < 7; d++) {
+      if (canStackOn(top, state.tableau[d], 1)) {
+        moves.push({ type: 'foundationPull', from: f, to: d });
+      }
+    }
+  }
+
   return moves;
 }
 
@@ -180,6 +191,11 @@ export function applyMove(state, move) {
       }
       break;
     }
+    case 'foundationPull': {
+      const card = state.foundations[move.from].pop();
+      state.tableau[move.to].push(card);
+      break;
+    }
     default:
       throw new Error(`Movimentação desconhecida: ${move.type}`);
   }
@@ -195,7 +211,9 @@ function flipNewTop(col) {
 export function gameStatus(state) {
   const onBases = state.foundations.reduce((n, f) => n + f.length, 0);
   if (onBases === 52) return { over: true, won: true, onBases };
-  const moves = legalMoves(state);
+  // Puxar de volta da base não conta como jogada para o fim de jogo
+  // (senão o jogo nunca terminaria: puxa e devolve em loop)
+  const moves = legalMoves(state).filter((m) => m.type !== 'foundationPull');
   if (moves.length === 0) return { over: true, won: false, onBases, legalMoves: 0 };
   return { over: false, won: false, onBases, legalMoves: moves.length };
 }
@@ -231,6 +249,10 @@ function scoreMove(move, state) {
       if (state.tableau[move.to].length === 0) s += 60;
       return s;
     }
+    case 'foundationPull':
+      // quase nunca é a melhor jogada (abaixo de comprar carta = 1);
+      // puxar para coluna vazia (estagiamento) vale mais que puxar para empilhar
+      return state.tableau[move.to].length === 0 ? 3 : 0.5;
     default:
       return 0;
   }
@@ -283,6 +305,10 @@ export function describeMove(move, state) {
         return `Mova ${cardName(first)} para a coluna ${columnName(move.to)}`;
       }
       return `Mova a sequência de ${stack.length} cartas (${cardName(first)}) para a coluna ${columnName(move.to)}`;
+    }
+    case 'foundationPull': {
+      const card = topCard(state.foundations[move.from]);
+      return `Puxe ${cardName(card)} da base de volta para a coluna ${columnName(move.to)}`;
     }
     default:
       return '';

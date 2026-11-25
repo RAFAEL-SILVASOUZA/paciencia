@@ -12,13 +12,15 @@ import {
   SUIT_GLYPH,
   SUIT_COLOR,
   SUIT_NAME,
-} from './engine.js?v=20';
-import { sfx, isSoundEnabled, setSoundEnabled } from './sfx.js?v=20';
-import { recordGame, loadStats, formatTimeMs } from './stats.js?v=20';
-import { startCascade } from './winfx.js?v=20';
-import { icon } from './icons.js?v=20';
+} from './engine.js?v=21';
+import { sfx, isSoundEnabled, setSoundEnabled } from './sfx.js?v=21';
+import { recordGame, loadStats, formatTimeMs } from './stats.js?v=21';
+import { startCascade } from './winfx.js?v=21';
+import { icon } from './icons.js?v=21';
 
-const MAX_EXPORTS = 3;
+const MAX_EXPORTS = 10;
+let busy = false; // bloqueia entradas durante a cascata automática
+let moveGeneration = 0; // nova partida cancela cascatas em andamento
 
 function buzz(pattern) {
   try {
@@ -27,6 +29,8 @@ function buzz(pattern) {
     // dispositivo sem vibração
   }
 }
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---------- Estado da aplicação ----------
 let state = newGame();
@@ -118,6 +122,11 @@ function showHint(move) {
     if (move.from === 'waste') sources = [wasteEl];
     else sources = [tableauEl.querySelector(`[data-col="${move.fromCol}"] [data-card-idx="${move.fromIdx}"]`)].filter(Boolean);
     targets = [foundationsEl.querySelector(`[data-suit="${move.to}"]`)].filter(Boolean);
+  } else if (move.type === 'foundationPull') {
+    const card = state.foundations[move.from][state.foundations[move.from].length - 1];
+    if (!card) return;
+    sources = [foundationsEl.querySelector(`[data-suit="${move.from}"]`)].filter(Boolean);
+    targets = [tableauEl.querySelector(`[data-col="${move.to}"]`)].filter(Boolean);
   } else if (move.type === 'tableau') {
     if (move.from === 'waste') {
       sources = [wasteEl];
@@ -315,6 +324,10 @@ function renderStatusLine() {
 // ---------- Ações ----------
 function captureSourceShot(move) {
   if (move.type === 'draw') return null; // sem carta de origem (sai do baralho)
+  if (move.type === 'foundationPull') {
+    const el = foundationsEl.querySelector(`[data-suit="${move.from}"] .card`);
+    return el ? { rect: el.getBoundingClientRect(), clone: el.cloneNode(true) } : null;
+  }
   if (move.type === 'redeal' || move.from === 'waste') {
     const el = wasteEl.querySelector('.card');
     return el ? { rect: el.getBoundingClientRect(), clone: el.cloneNode(true) } : null;
@@ -348,6 +361,15 @@ function playMoveAnimation(move, shot) {
     const card = fnd.querySelector('.card');
     const targetRect = (card || fnd).getBoundingClientRect();
     flyGhost(shot.rect, targetRect, shot.clone, card);
+    return;
+  }
+
+  if (move.type === 'foundationPull') {
+    const col = tableauEl.querySelector(`[data-col="${move.to}"]`);
+    if (!col || !shot || !shot.rect || !shot.clone) return;
+    const cards = col.querySelectorAll('.card');
+    const target = cards[cards.length - 1] || col;
+    flyGhost(shot.rect, target.getBoundingClientRect(), shot.clone, null);
     return;
   }
 
@@ -412,9 +434,30 @@ function playSfxForMove(move) {
   }
 }
 
-function doMove(move) {
-  if (finished) return;
+// Auto-play: depois que uma carta vai para a base (manual ou automática),
+// todas as outras cartas candidatas na mesa/descarte vão sozinhas em cascata.
+async function cascadeFoundations(delayMs = 220) {
+  const gen = moveGeneration;
+  for (let guard = 0; guard < 60; guard++) {
+    const move = legalMoves(state).find((m) => m.type === 'foundation');
+    if (!move || gen !== moveGeneration) break;
+    await sleep(delayMs);
+    if (gen !== moveGeneration) break;
+    const sourceShot = captureSourceShot(move);
+    applyMove(state, move);
+    render();
+    playMoveAnimation(move, sourceShot);
+    sfx.place();
+    buzz(10);
+  }
+}
+
+async function doMove(move) {
+  if (finished || busy) return;
+  busy = true;
+  const gen = moveGeneration;
   const sourceShot = captureSourceShot(move);
+  // um único snapshot: desfazer reverte a jogada do usuário + toda a cascata
   undoStack.push(deepClone(state));
   applyMove(state, move);
   clearHint();
@@ -423,11 +466,18 @@ function doMove(move) {
   playMoveAnimation(move, sourceShot);
   playSfxForMove(move);
   buzz(12);
+  if (move.type !== 'foundationPull') {
+    // puxar de volta não dispara auto-play (senão a carta voltaria sozinha)
+    await cascadeFoundations();
+  }
+  busy = false;
+  if (gen !== moveGeneration) return; // nova partida começou durante a cascata
   const s = gameStatus(state);
   if (s.over) endGame(s);
 }
 
 function doDraw() {
+  if (busy) return;
   if (finished) {
     toast('Partida encerrada — clique em Nova partida para recomeçar');
     return;
@@ -445,6 +495,7 @@ function doDraw() {
 }
 
 function doUndo() {
+  if (busy) return;
   clearHint();
   if (usedUndo >= MAX_EXPORTS) {
     toast(`Sem usos restantes de Voltar (${MAX_EXPORTS} por partida)`);
@@ -468,7 +519,7 @@ function doUndo() {
 }
 
 function doHelp() {
-  if (finished) return;
+  if (busy || finished) return;
   if (usedHelp >= MAX_EXPORTS) {
     clearHint();
     toast(`Sem usos restantes de Ajuda (${MAX_EXPORTS} por partida)`);
@@ -562,6 +613,8 @@ function hideOverlay() {
 }
 
 function doNewGame() {
+  moveGeneration++; // cancela cascatas de auto-play em andamento
+  busy = false;
   state = newGame();
   undoStack = [];
   usedHelp = 0;
@@ -596,6 +649,7 @@ function moveSmartForSelection(selection) {
 }
 
 function onCardClick(col, idx) {
+  if (busy) return;
   if (finished) {
     toast('Partida encerrada — clique em Nova partida para recomeçar');
     return;
@@ -608,6 +662,7 @@ function onCardClick(col, idx) {
 }
 
 function onFoundationClick(suit) {
+  if (busy) return;
   if (finished) {
     toast('Partida encerrada — clique em Nova partida para recomeçar');
     return;
@@ -618,12 +673,25 @@ function onFoundationClick(suit) {
     .sort((a, b) => (a.from === 'waste' ? 0 : 1) - (b.from === 'waste' ? 0 : 1));
   if (moves.length > 0) {
     doMove(moves[0]);
-  } else {
-    toast(`Nada pode ir para a base de ${SUIT_NAME[suit]} agora`);
+    return;
   }
+  // nada pode ir para essa base: puxa de volta a carta do topo (click inteligente,
+  // preferindo coluna vazia como estagiamento)
+  const pulls = legalMoves(state)
+    .filter((m) => m.type === 'foundationPull' && m.from === suit)
+    .sort(
+      (a, b) =>
+        (state.tableau[b.to].length === 0 ? 1 : 0) - (state.tableau[a.to].length === 0 ? 1 : 0)
+    );
+  if (pulls.length > 0) {
+    doMove(pulls[0]);
+    return;
+  }
+  toast(`Nada pode ir para a base de ${SUIT_NAME[suit]} agora`);
 }
 
 function onTableauEmptyClick(col) {
+  if (busy) return;
   if (finished) {
     toast('Partida encerrada — clique em Nova partida para recomeçar');
     return;
@@ -641,6 +709,7 @@ function onTableauEmptyClick(col) {
 }
 
 function onWasteClick() {
+  if (busy) return;
   if (finished) {
     toast('Partida encerrada — clique em Nova partida para recomeçar');
     return;

@@ -247,3 +247,74 @@ test('rankLabel, cardName, columnName', () => {
   assert.equal(columnName(6), 'G');
   assert.equal(SUIT_GLYPH[2], '♦');
 });
+
+test('foundationPull: topo da base pode voltar para coluna vazia (Rei)', () => {
+  const s = baseState();
+  s.foundations[0] = [card(0, 13)]; // K♠ na base
+  const moves = legalMoves(s);
+  const pull = moves.find((m) => m.type === 'foundationPull' && m.from === 0 && m.to === 1);
+  assert.ok(pull, 'K♠ deveria poder voltar para a coluna vazia B');
+});
+
+test('foundationPull: topo da base pode voltar empilhando (cor alternada)', () => {
+  const s = baseState();
+  s.foundations[0] = [card(0, 1)]; // A♠ na base
+  s.tableau[0] = [card(1, 2)]; // 2♥ na mesa: A♠ (preto) sobre 2♥ (vermelho) é legal
+  const moves = legalMoves(s);
+  assert.ok(moves.some((m) => m.type === 'foundationPull' && m.from === 0 && m.to === 0));
+});
+
+test('foundationPull: não é legal quando nenhuma coluna aceita', () => {
+  const s = baseState();
+  s.foundations[0] = [card(0, 1)]; // A♠ não empilha em coluna sem 2
+  s.tableau[0] = [card(1, 13)]; // K♥
+  const moves = legalMoves(s);
+  assert.ok(!moves.some((m) => m.type === 'foundationPull' && m.from === 0));
+});
+
+test('applyMove: foundationPull move a carta da base para a mesa', () => {
+  const s = baseState();
+  s.foundations[1] = [card(1, 1)]; // A♥ na base
+  s.tableau[0] = [card(0, 2)]; // 2♠ na mesa: A♥ (vermelho) sobre 2♠ (preto) é legal
+  const moves = legalMoves(s);
+  const pull = moves.find((m) => m.type === 'foundationPull' && m.from === 1 && m.to === 0);
+  assert.ok(pull);
+  applyMove(s, pull);
+  assert.equal(s.foundations[1].length, 0);
+  assert.equal(s.tableau[0].length, 2);
+  assert.equal(s.tableau[0][1].rank, 1);
+  assert.equal(s.moves, 1);
+});
+
+test('gameStatus ignora foundationPull: só puxar de volta não evita o fim de jogo', () => {
+  const s = baseState();
+  // K♠ na base e coluna A vazia: a única saída seria puxá-lo de volta,
+  // mas isso não conta como jogada (senão puxa e devolve em loop).
+  // Nenhum rei está acessível na mesa (enterrados) e todas as cartas
+  // expostas são pretas — nada empilha, nada vai para a base, baralho vazio.
+  s.foundations[0] = [card(0, 13)];
+  s.tableau = [
+    [],
+    [card(1, 13, false), card(0, 12, true)], // K♥ enterrado, Q♠ exposta
+    [card(2, 13, false), card(0, 11, true)], // K♦ enterrado, J♠ exposta
+    [card(3, 13, false), card(0, 10, true)], // K♣ enterrado, 10♠ exposta
+    [card(0, 9, true)],  // 9♠
+    [card(3, 12, true)], // Q♣
+    [card(3, 11, true)], // J♣
+  ];
+  assert.ok(legalMoves(s).some((m) => m.type === 'foundationPull'), 'puxar deveria existir');
+  const st = gameStatus(s);
+  assert.equal(st.over, true);
+  assert.equal(st.won, false);
+  assert.equal(st.legalMoves, 0);
+});
+
+test('gameStatus conta jogadas reais além do puxar de volta', () => {
+  const s = baseState();
+  s.foundations[0] = [card(0, 13)]; // K♠ na base
+  s.tableau[1] = [card(0, 10)]; // 10♠
+  s.waste = [card(1, 9)]; // 9♥: jogada real (empilha na 10♠) + puxar K♠ para coluna vazia
+  const st = gameStatus(s);
+  assert.equal(st.over, false);
+  assert.ok(st.legalMoves >= 1);
+});
