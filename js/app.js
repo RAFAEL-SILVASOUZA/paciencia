@@ -12,15 +12,16 @@ import {
   SUIT_GLYPH,
   SUIT_COLOR,
   SUIT_NAME,
-} from './engine.js?v=23';
-import { sfx, isSoundEnabled, setSoundEnabled } from './sfx.js?v=23';
-import { recordGame, loadStats, formatTimeMs } from './stats.js?v=23';
-import { startCascade } from './winfx.js?v=23';
-import { icon } from './icons.js?v=23';
+} from './engine.js?v=25';
+import { sfx, isSoundEnabled, setSoundEnabled } from './sfx.js?v=25';
+import { recordGame, loadStats, formatTimeMs } from './stats.js?v=25';
+import { startCascade } from './winfx.js?v=25';
+import { icon } from './icons.js?v=25';
 
 const MAX_EXPORTS = 10;
 let busy = false; // bloqueia entradas durante a cascata automática
 let moveGeneration = 0; // nova partida cancela cascatas em andamento
+const STUCK_LIMIT = 25; // ciclo completo do baralho (24 compras + reembaralhar) sem progresso
 
 function buzz(pattern) {
   try {
@@ -41,6 +42,9 @@ let startedAt = Date.now();
 let finished = false;
 let won = false;
 let elapsedMs = 0;
+let endKind = 'dead'; // 'win' | 'dead' | 'stuck'
+let neutralStreak = 0; // compras/reembaralhos/puxadas seguidas sem progresso
+let lastPull = null; // última carta puxada da base: { id, col, from }
 let hintTimer = null;
 let toastTimer = null;
 let confirmNewTimer = null;
@@ -313,6 +317,10 @@ function render() {
 }
 
 function renderStatusLine() {
+  if (finished && endKind === 'stuck') {
+    statusEl.textContent = 'Jogo travado — sem jogadas produtivas';
+    return;
+  }
   const s = gameStatus(state);
   if (s.over) {
     statusEl.textContent = s.won ? 'Bases completas — vitória!' : 'Sem jogadas disponíveis';
@@ -449,7 +457,36 @@ async function cascadeFoundations(delayMs = 220) {
     playMoveAnimation(move, sourceShot);
     sfx.place();
     buzz(10);
+    // carta indo para a base é sempre progresso
+    neutralStreak = 0;
+    lastPull = null;
   }
+}
+
+// Classifica a jogada antes de aplicá-la: produtiva (avança o jogo) vs. neutra
+// (compra, reembaralho, puxada da base, ou devolver à base a carta que acabou
+// de ser puxada — o par "indo e voltando" que não muda nada).
+function classifyMove(move) {
+  const productive = move.type === 'foundation' || move.type === 'tableau';
+  if (move.type === 'foundationPull') {
+    const fnd = state.foundations[move.from];
+    const card = fnd[fnd.length - 1];
+    lastPull = card ? { id: card.id, col: move.to, from: move.from } : null;
+    return false;
+  }
+  if (
+    productive && move.type === 'foundation' && move.from === 'tableau' && lastPull &&
+    move.fromCol === lastPull.col && move.to === lastPull.from
+  ) {
+    const col = state.tableau[move.fromCol];
+    const card = col[col.length - 1];
+    if (card && card.id === lastPull.id) return false; // par indo-e-voltando: neutro
+  }
+  if (productive) {
+    neutralStreak = 0;
+    lastPull = null;
+  }
+  return productive;
 }
 
 async function doMove(move) {
@@ -457,9 +494,15 @@ async function doMove(move) {
   busy = true;
   const gen = moveGeneration;
   const sourceShot = captureSourceShot(move);
+  const productive = classifyMove(move);
   // um único snapshot: desfazer reverte a jogada do usuário + toda a cascata
   undoStack.push(deepClone(state));
   applyMove(state, move);
+  if (productive) {
+    neutralStreak = 0;
+  } else {
+    neutralStreak++;
+  }
   clearHint();
   clearToast();
   render();
@@ -473,7 +516,19 @@ async function doMove(move) {
   busy = false;
   if (gen !== moveGeneration) return; // nova partida começou durante a cascata
   const s = gameStatus(state);
-  if (s.over) endGame(s);
+  if (s.over) {
+    endGame(s);
+    return;
+  }
+  // Detector de jogo travado: o baralho foi ciclado inteiro (STUCK_LIMIT
+  // compras/reembaralhos/puxadas seguidas) sem nenhuma jogada produtiva
+  // disponível — esta partida não tem mais solução.
+  const hasRealMoves = legalMoves(state).some(
+    (m) => m.type === 'foundation' || m.type === 'tableau'
+  );
+  if (!hasRealMoves && neutralStreak >= STUCK_LIMIT) {
+    endStuck();
+  }
 }
 
 function doDraw() {
@@ -510,6 +565,8 @@ function doUndo() {
   usedUndo++;
   finished = false;
   won = false;
+  neutralStreak = 0;
+  lastPull = null;
   overlayEl.classList.remove('show');
   overlayEl.setAttribute('hidden', '');
   render();
@@ -538,6 +595,7 @@ function doHelp() {
 function endGame(s) {
   finished = true;
   won = s.won;
+  endKind = won ? 'win' : 'dead';
   elapsedMs = Date.now() - startedAt;
   renderStatusLine();
   const stats = recordGame({ won, moves: state.moves, ms: elapsedMs });
@@ -551,6 +609,20 @@ function endGame(s) {
     buzz([14, 90, 14]);
     setTimeout(showOverlay, 450);
   }
+}
+
+// Partida sem solução: o baralho ciclou inteiro sem nenhuma jogada produtiva
+function endStuck() {
+  finished = true;
+  won = false;
+  endKind = 'stuck';
+  elapsedMs = Date.now() - startedAt;
+  renderStatusLine();
+  const stats = recordGame({ won: false, moves: state.moves, ms: elapsedMs });
+  updateWinChip(stats);
+  sfx.over();
+  buzz([14, 90, 14]);
+  showOverlay();
 }
 
 function launchWinCascade(stats) {
@@ -582,10 +654,16 @@ function launchWinCascade(stats) {
 function showOverlay() {
   const s = gameStatus(state);
   overlayIcon.innerHTML = icon(won ? 'partyPopper' : 'flag');
-  overlayTitle.textContent = won ? 'Vitória!' : 'Fim de jogo';
+  overlayTitle.textContent = won
+    ? 'Vitória!'
+    : endKind === 'stuck'
+      ? 'Jogo travado'
+      : 'Fim de jogo';
   overlayMsg.textContent = won
     ? 'Todas as bases foram completadas. Excelente trabalho!'
-    : 'Não há mais jogadas disponíveis. Tente uma nova partida.';
+    : endKind === 'stuck'
+      ? 'O baralho foi ciclado inteiro sem nenhuma jogada produtiva — esta partida não tem mais solução.'
+      : 'Não há mais jogadas disponíveis. Tente uma nova partida.';
   const baseCount = s.onBases;
   overlayStats.innerHTML = `
     <div class="stat"><span class="stat-n">${state.moves}</span><span class="stat-l">jogadas</span></div>
@@ -615,6 +693,9 @@ function hideOverlay() {
 function doNewGame() {
   moveGeneration++; // cancela cascatas de auto-play em andamento
   busy = false;
+  neutralStreak = 0;
+  lastPull = null;
+  endKind = 'dead';
   state = newGame();
   undoStack = [];
   usedHelp = 0;
@@ -820,6 +901,36 @@ function init() {
     navigator.serviceWorker.register('sw.js').catch((err) => {
       console.warn('Service worker não registrado:', err);
     });
+  }
+
+  // Hook de testes E2E — só existe em ambiente local
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+    window.__paciencia = {
+      getState: () => state,
+      startTest(next) {
+        state = next;
+        undoStack = [];
+        usedHelp = 0;
+        usedUndo = 0;
+        startedAt = Date.now();
+        finished = false;
+        won = false;
+        elapsedMs = 0;
+        endKind = 'dead';
+        neutralStreak = 0;
+        lastPull = null;
+        moveGeneration++;
+        busy = false;
+        hideOverlay();
+        render();
+      },
+      doMove,
+      resetCounters() {
+        neutralStreak = 0;
+        lastPull = null;
+      },
+      getCounters: () => ({ neutralStreak, lastPull }),
+    };
   }
 }
 

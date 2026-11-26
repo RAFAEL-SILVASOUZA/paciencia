@@ -1,5 +1,5 @@
 // Service Worker — Paciência de Cartas (cache-first, offline)
-const CACHE = 'paciencia-v23';
+const CACHE = 'paciencia-v25';
 
 const ASSETS = [
   './',

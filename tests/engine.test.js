@@ -180,6 +180,34 @@ test('bestMove recomenda compra quando só há baralho', () => {
   assert.equal(m.type, 'draw');
 });
 
+test('bestMove prefere comprar a puxar da base (quebra o loop indo-e-voltando)', () => {
+  const s = baseState();
+  s.stock = [card(0, 5, false)];
+  s.foundations[0] = [card(0, 13)]; // K♠ na base
+  s.tableau[1] = []; // coluna vazia: puxar K teria sido sugerido antes
+  const m = bestMove(s, null);
+  assert.equal(m.type, 'draw');
+});
+
+test('bestMove prefere reembaralhar a puxar da base', () => {
+  const s = baseState();
+  s.waste = [card(0, 5)];
+  s.foundations[0] = [card(0, 13)]; // K♠ na base
+  s.tableau[1] = []; // coluna vazia
+  const m = bestMove(s, null);
+  assert.equal(m.type, 'redeal');
+});
+
+test('bestMove só sugere puxar da base quando não há compra nem reembaralho', () => {
+  const s = baseState();
+  s.foundations[0] = [card(0, 13)]; // K♠ na base
+  // sem baralho nem descarte: o jogo já terminaria (travado),
+  // mas a dica ainda aponta o puxar como último recurso
+  const m = bestMove(s, null);
+  assert.equal(m.type, 'foundationPull');
+  assert.equal(s.tableau[m.to].length, 0); // alvo é uma coluna vazia
+});
+
 test('movesFromSelection filtra por seleção de descarte', () => {
   const s = baseState();
   s.waste = [card(3, 5)]; // 5♣ preto

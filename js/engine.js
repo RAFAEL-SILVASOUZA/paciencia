@@ -250,9 +250,10 @@ function scoreMove(move, state) {
       return s;
     }
     case 'foundationPull':
-      // quase nunca é a melhor jogada (abaixo de comprar carta = 1);
-      // puxar para coluna vazia (estagiamento) vale mais que puxar para empilhar
-      return state.tableau[move.to].length === 0 ? 3 : 0.5;
+      // abaixo de comprar (1) e reembaralhar (2): a dica nunca sugere o
+      // vai-e-volta puxar/devolver; sugere puxar só quando não existe mais nada
+      // (e nesse caso o jogo já terminou como "travado")
+      return state.tableau[move.to].length === 0 ? 0.3 : 0.1;
     default:
       return 0;
   }

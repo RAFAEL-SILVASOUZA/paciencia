@@ -4,7 +4,7 @@ Jogo da paciência (Klondike) em **PWA mobile-first**, em português (pt-BR).
 
 ## Como jogar
 
-- **Ajuda**: mostra a jogada mais inteligente (uma dentre: base, revelação de carta, coluna vazia, puxar da base). **10 usos por partida**.
+- **Ajuda**: mostra a jogada mais inteligente (uma dentre: base, revelação de carta, coluna vazia). **10 usos por partida**. A dica nunca sugere puxar uma carta da base só para devolvê-la depois — quando só existe esse vai-e-volta, a partida é declarada travada (veja abaixo).
 - **Voltar**: desfaz a última jogada (a cascata automática inteira conta como uma só). **10 usos por partida**.
 - **Nova partida**: confirma (dupla-toque) e recomeça.
 - **Comprar carta**: toque no baralho.
@@ -19,6 +19,7 @@ Jogo da paciência (Klondike) em **PWA mobile-first**, em português (pt-BR).
 - **Vitória**: fanfarra + cascata de cartas quicando na tela (toque na tela para pular).
 - **Estatísticas**: vitórias, sequência atual e recordes (melhor tempo e menos jogadas numa vitória) ficam salvos no aparelho — aparecem no chip 🏆 da barra lateral e no fim de jogo.
 - **Fim de jogo**: quando não houver mais jogadas (ou quando as 4 bases estiverem completas — vitória).
+- **Jogo travado**: alguns embaralhos não têm solução — como o reembaralhar é ilimitado e preserva a ordem, o jogo cicla o baralho para sempre sem fim. Se um ciclo inteiro do baralho (todas as compras + reembaralhar) passar sem **nenhuma jogada produtiva**, a partida termina com o aviso "Jogo travado" e conta como derrota nas estatísticas. Puxar/devolver a mesma carta da base também conta como não-progresso.
 
 ## Layout
 
