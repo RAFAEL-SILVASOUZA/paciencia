@@ -21,9 +21,9 @@
     34px,
     min(
       calc((100vw - var(--sidebar-w) - 40px - 6 * var(--gap)) / 7),
-      20vh
+      17vh
     ),
-    92px
+    68px
   );
   --ch: calc(var(--cw) * 1.44);
   --step: calc(var(--ch) * 0.36);
@@ -758,12 +758,12 @@ body {
   :root {
     --sidebar-w: 216px;
     --cw: clamp(
-      64px,
+      56px,
       min(
         calc((100vw - var(--sidebar-w) - 44px - 6 * var(--gap)) / 7),
-        19vh
+        17vh
       ),
-      120px
+      96px
     );
   }
 }
@@ -772,12 +772,12 @@ body {
   :root {
     --sidebar-w: 236px;
     --cw: clamp(
-      84px,
+      64px,
       min(
         calc((100vw - var(--sidebar-w) - 44px - 6 * var(--gap)) / 7),
-        20vh
+        18vh
       ),
-      140px
+      108px
     );
   }
 }

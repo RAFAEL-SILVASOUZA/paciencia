@@ -62,4 +62,4 @@ node --test tests/
 └── tests/          # Testes do motor e das estatísticas (node:test)
 ```
 
-O service worker usa cache-first: ao atualizar arquivos, aumentar a versão em `sw.js` (`CACHE`) e a query de versão dos módulos JS (`?v=N` em `index.html` e `js/app.js`) — assim o navegador não reutiliza o módulo cacheado.
+O service worker usa cache-first: ao atualizar arquivos, aumentar a versão em `sw.js` (`CACHE`) e a query de versão dos arquivos carregados (`?v=N` em `index.html`, `js/app.js` e no link do CSS) — assim o navegador não reutiliza a versão cacheada.
